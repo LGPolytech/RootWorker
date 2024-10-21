@@ -1,55 +1,45 @@
 package RootModels;
 
-import RootModels.Root.Root;
-import org.apache.commons.collections.map.HashedMap;
-
-import java.util.HashSet;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
-import java.util.TreeSet;
+import java.util.TreeMap;
+import RootModels.Root.Root;
 
 public class RootModel {
-    public final List<Root> rootList; // List of root parsers
-    public final HashSet<Double> hoursCorrespondingToTimePoints; // Strictly increasing set of double values representing hours
-    final Map<Scene, Plant> sceneAndPlants;
-    Metadata metadata;
-    private float dpi;
-    private float pixelSize;
+    public final TreeMap<LocalDateTime, RootModelEntry> dataByDate;
 
-    public RootModel(List<Root> roots, Map<Scene, Plant> sceneAndPlants, Metadata metadata) {
-        this.rootList = roots;
-        this.sceneAndPlants = sceneAndPlants;
-        this.metadata = metadata;
-        this.hoursCorrespondingToTimePoints = new HashSet<>();
+    public RootModel(TreeMap<LocalDateTime, RootModelEntry> dataByDate) {
+        this.dataByDate = dataByDate;
     }
 
-    public HashSet<Double> getHoursCorrespondingToTimePoints() {
-        return hoursCorrespondingToTimePoints;
-    }
-
-    public Map<Scene, Plant> getSceneAndPlants() {
-        return sceneAndPlants;
-    }
-
-    public List<Root> getRootList() {
-        return rootList;
-    }
-
-    /**
-     * Gets the metadata associated with the original RSML file
-     *
-     * @return A Metadata object
-     */
-    public Metadata getMetadata() {
-        return metadata;
+    public TreeMap<LocalDateTime, RootModelEntry> getDataByDate() {
+        return dataByDate;
     }
 
     @Override
     public String toString() {
-        if (hoursCorrespondingToTimePoints.isEmpty()) {
-            return "RootModel composed of :\n" + "\t" + rootList.size() + " roots\n\tTaken at time : "+metadata.getdateOfCapture();
-        } else {
-            return "RootModel composed of :\n" + "\t" + rootList.size() + " roots\n\t" + "That grows in a range of " ;
+        StringBuilder sb = new StringBuilder();
+        sb.append("RootModel composed of:\n");
+        for (Map.Entry<LocalDateTime, RootModelEntry> entry : dataByDate.entrySet()) {
+            sb.append("\tDate: ").append(entry.getKey()).append("\n");
+            sb.append("\tScene: ").append(entry.getValue().scene).append("\n");
+            sb.append("\tMetadata: ").append(entry.getValue().metadata).append("\n");
+            sb.append("\tNumber of roots: ").append(entry.getValue().flatRootList.size()).append("\n");
+        }
+        return sb.toString();
+    }
+
+    static class RootModelEntry {
+        public final Scene scene;
+        public final Metadata metadata;
+        public final List<Root> flatRootList;
+
+        public RootModelEntry(Scene scene, Metadata metadata, List<Root> flatRootList) {
+            this.scene = scene;
+            this.metadata = metadata;
+            this.flatRootList = flatRootList;
         }
     }
 }
+

@@ -1,52 +1,36 @@
 package RootModels;
 
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
  * The Metadata class represents metadata information for the RSML2D format.
  */
 public class Metadata {
-    public List<PropertyDefinition> propertiedef; // List of property definitions
-    float version; // Version of the metadata
-    String unit; // Unit of measurement
-    float resolution; // Resolution of the metadata
-    LocalDateTime modifyDate; // Modification date of the metadata
-    String dateOfCapture; // Date to use
-    String software; // Software information
-    String user; // User information
-    String fileKey; // File key
-    double size; // Size of the metadata
-    List<Double> observationHours; // Observation hours
-    Map<String, String> image_info; // Image information
+    private float version;
+    private String unit;
+    private float resolution;
+    private LocalDateTime modifyDate;
+    private TreeSet<LocalDateTime> dateOfCapture;
+    private String software;
+    private String user;
+    private String fileKey;
+    private List<Double> observationHours;
+    List<PropertyDefinition> propertyDefinitions;
+    private Map<String, String> imageInfo;
 
-    /**
-     * Default constructor initializing metadata with default values.
-     */
     public Metadata() {
         this.version = 0;
         this.unit = "";
         this.resolution = 0;
         this.modifyDate = LocalDateTime.now();
+        this.dateOfCapture = new TreeSet<>();
         this.software = "";
         this.user = "";
         this.fileKey = "";
-        this.dateOfCapture = "";
-        this.size = 0;
-        this.propertiedef = new ArrayList<>();
-        this.image_info = new HashMap<>();
-    }
-
-    /**
-     * Gets the unit of measurement.
-     *
-     * @return The unit of measurement.
-     */
-    public String getUnit() {
-        return unit;
+        this.observationHours = new ArrayList<>();
+        this.propertyDefinitions = new ArrayList<>();
+        this.imageInfo = new HashMap<>();
     }
 
     /**
@@ -59,15 +43,6 @@ public class Metadata {
     }
 
     /**
-     * Gets the version of the metadata.
-     *
-     * @return The version of the metadata.
-     */
-    public float getVersion() {
-        return version;
-    }
-
-    /**
      * Sets the version of the metadata.
      *
      * @param version The version of the metadata.
@@ -77,30 +52,12 @@ public class Metadata {
     }
 
     /**
-     * Gets the modification date of the metadata.
-     *
-     * @return The modification date of the metadata.
-     */
-    public LocalDateTime getModifyDate() {
-        return modifyDate;
-    }
-
-    /**
      * Sets the modification date of the metadata.
      *
      * @param modifyDate The modification date of the metadata.
      */
     public void setModifyDate(LocalDateTime modifyDate) {
         this.modifyDate = modifyDate;
-    }
-
-    /**
-     * Gets the resolution of the metadata.
-     *
-     * @return The resolution of the metadata.
-     */
-    public float getResolution() {
-        return resolution;
     }
 
     /**
@@ -117,27 +74,15 @@ public class Metadata {
      *
      * @return The date to use.
      */
-    public String getdateOfCapture() {
+    public TreeSet<LocalDateTime> getdateOfCapture() {
         return dateOfCapture;
     }
 
-    /**
-     * Sets the date to use.
-     *
-     * @param dateOfCapture The date to use.
-     */
-    public void setdateOfCapture(String dateOfCapture) {
-        this.dateOfCapture = dateOfCapture;
+    public void setdateOfCapture(TreeSet<LocalDateTime> date) {
+         dateOfCapture = date;
     }
 
-    /**
-     * Gets the software information.
-     *
-     * @return The software information.
-     */
-    public String getSoftware() {
-        return software;
-    }
+    public void adddateOfCapture(LocalDateTime date) {dateOfCapture.add(date);}
 
     /**
      * Sets the software information.
@@ -149,30 +94,12 @@ public class Metadata {
     }
 
     /**
-     * Gets the user information.
-     *
-     * @return The user information.
-     */
-    public String getUser() {
-        return user;
-    }
-
-    /**
      * Sets the user information.
      *
      * @param user The user information.
      */
     public void setUser(String user) {
         this.user = user;
-    }
-
-    /**
-     * Gets the file key.
-     *
-     * @return The file key.
-     */
-    public String getFileKey() {
-        return fileKey;
     }
 
     /**
@@ -193,36 +120,26 @@ public class Metadata {
         return observationHours;
     }
 
+    public TreeSet<LocalDateTime> getDateOfCapture() {
+        return dateOfCapture;
+    }
+
+    public void addDateOfCapture(LocalDateTime date) {
+        this.dateOfCapture.add(date);
+    }
+
     public void setObservationHours(List<Double> observationHoursList) {
         this.observationHours = new ArrayList<>(observationHoursList);
     }
 
-    /**
-     * Gets the size of the metadata.
-     *
-     * @return The size of the metadata.
-     */
-    public double getSize() {
-        return size;
-    }
-
-    /**
-     * Sets the size of the metadata.
-     *
-     * @param size The size of the metadata.
-     */
-    public void setSize(double size) {
-        this.size = size;
-    }
-
-    /**
-     * Adds image information.
-     *
-     * @param key   The key for the image information.
-     * @param value The value for the image information.
-     */
-    public void addImageInfo(String key, String value) {
-        this.image_info.put(key, value);
+    public void add(Metadata meta) {
+        this.adddateOfCapture(meta.dateOfCapture.first());
+        if (meta.resolution != this.resolution) {
+            System.err.println("Not the same resolution between files !" + "\n\tBefore : " + this.resolution + "\tAfter : " + meta.resolution);
+            }
+        if (!Objects.equals(meta.unit, this.unit)) {
+            System.err.println("Not the same measure unit between files !");
+        }
     }
 
     /**

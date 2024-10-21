@@ -3,6 +3,7 @@ package Parser;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -36,7 +37,7 @@ public class Parser2DTime extends RSMLParser<Parser2DTime.PointData> {
     }
 
     @Override
-    protected List<List<PointData>> parseGeometry(Element rootElement) {
+    protected List<List<PointData>> parseGeometry(Element rootElement, LocalDateTime dateToUse) {
         NodeList geometryNodes = rootElement.getElementsByTagName("geometry");
         List<List<PointData>> geometry = new ArrayList<>();
 

@@ -10,28 +10,9 @@ public class Function {
     private final String name; // The name of the function
     private final List<Double> samples; // The list of samples
 
-    /**
-     * Constructs a Function with the specified name.
-     *
-     * @param name The name of the function.
-     */
-    public Function(String name) {
-        this.name = name;
-        this.samples = new ArrayList<>();
-    }
-
     public Function(String name, List<Double> samples) {
         this.name = name;
         this.samples = samples;
-    }
-
-    /**
-     * Adds a sample to the function.
-     *
-     * @param sample The sample to add, as a String.
-     */
-    public void addSample(String sample) {
-        this.samples.add(Double.parseDouble(sample));
     }
 
     /**
@@ -41,15 +22,6 @@ public class Function {
      */
     public String getName() {
         return name;
-    }
-
-    /**
-     * Gets the list of samples.
-     *
-     * @return The list of samples.
-     */
-    public List<Double> getSamples() {
-        return samples;
     }
 
     /**

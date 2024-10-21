@@ -16,89 +16,87 @@ import java.util.*;
 
 public class RootModelLoader {
 
+    public static boolean isTemporal = false;
+
     public static void main(String[] args) throws Exception {
-        HashSet<String> files = new HashSet<>(Collections.singleton("D:\\loaiu\\MAM5\\Stage\\data\\UC3\\Rootsystemtracker\\Output_Data\\RSML_2D+t\\B73_R07_01.rsml"));
+        TreeSet<String> files = new TreeSet<>(Arrays.asList(
+                "D:\\loaiu\\MAM5\\Stage\\data\\UC3\\Rootsystemtracker\\Original_Data\\B73_R04_01\\13_05_2018_HA01_R004_h053.rsml",
+                "D:\\loaiu\\MAM5\\Stage\\data\\UC3\\Rootsystemtracker\\Original_Data\\B73_R04_01\\14_05_2018_HA01_R004_h004.rsml",
+                "D:\\loaiu\\MAM5\\Stage\\data\\UC3\\Rootsystemtracker\\Original_Data\\B73_R04_01\\15_05_2018_HA01_R004_h004.rsml",
+                "D:\\loaiu\\MAM5\\Stage\\data\\UC3\\Rootsystemtracker\\Original_Data\\B73_R04_01\\16_05_2018_HA01_R004_h004.rsml",
+                "D:\\loaiu\\MAM5\\Stage\\data\\UC3\\Rootsystemtracker\\Original_Data\\B73_R04_01\\17_05_2018_HA01_R004_h004.rsml",
+                "D:\\loaiu\\MAM5\\Stage\\data\\UC3\\Rootsystemtracker\\Original_Data\\B73_R04_01\\18_05_2018_HA01_R004_h004.rsml",
+                "D:\\loaiu\\MAM5\\Stage\\data\\UC3\\Rootsystemtracker\\Original_Data\\B73_R04_01\\19_05_2018_HA01_R004_h004.rsml",
+                "D:\\loaiu\\MAM5\\Stage\\data\\UC3\\Rootsystemtracker\\Original_Data\\B73_R04_01\\20_05_2018_HA01_R004_h004.rsml",
+                "D:\\loaiu\\MAM5\\Stage\\data\\UC3\\Rootsystemtracker\\Original_Data\\B73_R04_01\\21_05_2018_HA01_R004_h004.rsml",
+                "D:\\loaiu\\MAM5\\Stage\\data\\UC3\\Rootsystemtracker\\Original_Data\\B73_R04_01\\22_05_2018_HA01_R004_h004.rsml",
+                "D:\\loaiu\\MAM5\\Stage\\data\\UC3\\Rootsystemtracker\\Original_Data\\B73_R04_01\\23_05_2018_HA01_R004_h004.rsml",
+                "D:\\loaiu\\MAM5\\Stage\\data\\UC3\\Rootsystemtracker\\Original_Data\\B73_R04_01\\24_05_2018_HA01_R004_h004.rsml",
+                "D:\\loaiu\\MAM5\\Stage\\data\\UC3\\Rootsystemtracker\\Original_Data\\B73_R04_01\\25_05_2018_HA01_R004_h004.rsml"
+        ));
+
         RootModel rm = loadRsmlFiles(files);
         System.out.println(rm);
     }
 
-    /**
-     * Charge un modèle de racine à partir d'un ou plusieurs fichiers RSML.
-     *
-     * @param rsmlFilePaths Ensemble des chemins des fichiers RSML.
-     * @return Un objet RootModel contenant les données chargées.
-     * @throws Exception Si une erreur survient lors du chargement.
-     */
     public static RootModel loadRsmlFiles(Set<String> rsmlFilePaths) throws Exception {
-        // Déterminer le type de fichiers RSML (2D ou 2D+t)
         boolean isTimeData = isTimeData(rsmlFilePaths);
 
         List<Map<String, Object>> parsedDataList;
         if (isTimeData) {
-            // Fichier RSML 2D+t
             Parser2DTime parser = new Parser2DTime();
             parsedDataList = parser.parseRsmlFiles(new HashSet<>(rsmlFilePaths));
         } else {
-            // Fichiers RSML 2D
             Parser2D parser = new Parser2D();
             parsedDataList = parser.parseRsmlFiles(new HashSet<>(rsmlFilePaths));
         }
 
-        // Construire le RootModel à partir des données parsées
         return buildRootModelFromParsedData(parsedDataList, isTimeData);
     }
 
-    /**
-     * Vérifie si les fichiers RSML fournis contiennent des données temporelles.
-     *
-     * @param rsmlFilePaths Ensemble des chemins des fichiers RSML.
-     * @return True si les fichiers contiennent des données temporelles, False sinon.
-     */
     private static boolean isTimeData(Set<String> rsmlFilePaths) {
-        // Pour simplifier, si un seul fichier est fourni, on suppose qu'il est 2D+t
-        // Sinon, on suppose qu'il s'agit de fichiers 2D
-        return rsmlFilePaths.size() == 1;
+        return isTemporal;
     }
 
-    /**
-     * Construit un RootModel à partir des données parsées.
-     *
-     * @param parsedDataList Liste des données parsées.
-     * @param isTimeData     Indique si les données contiennent des informations temporelles.
-     * @return Un objet RootModel.
-     */
     private static RootModel buildRootModelFromParsedData(List<Map<String, Object>> parsedDataList, boolean isTimeData) {
-        List<Root> rootList = new ArrayList<>();
-        Map<Scene, Plant> sceneAndPlants = new HashMap<>();
-        Metadata metadata = null;
-        RootModel rootModel = new RootModel(rootList, sceneAndPlants, null);
+        TreeMap<LocalDateTime, RootModel.RootModelEntry> dataByDate = new TreeMap<>();
 
-        // Traiter chaque fichier RSML parsé
         for (Map<String, Object> parsedData : parsedDataList) {
-            // Construire les métadonnées
-            if (metadata == null) {
-                metadata = buildMetadata((Map<String, Object>) parsedData.get("metadata"));
-                rootModel.metadata = metadata;
+            Metadata metadata = buildMetadata((Map<String, Object>) parsedData.get("metadata"));
 
-                // Si 'observationHours' est présent, l'ajouter à 'hoursCorrespondingToTimePoints'
-                if (metadata.getObservationHours() != null && isTimeData) {
-                    rootModel.hoursCorrespondingToTimePoints.addAll(metadata.getObservationHours());
-                }
-            }
+            LocalDateTime dateOfCapture = metadata.getDateOfCapture().first();
 
-            // Construire les scènes et les plantes
             List<Map<String, Object>> scenesData = (List<Map<String, Object>>) parsedData.get("scenes");
+            if (scenesData == null || scenesData.isEmpty()) {
+                System.err.println("Aucune scène trouvée dans les données parsées.");
+                continue; // Passer au fichier suivant
+            }
+
+            Scene scene = new Scene();
+
+            List<Root> flatRootList = new ArrayList<>();
+
             for (Map<String, Object> sceneData : scenesData) {
-                Scene scene = buildScene(sceneData, isTimeData);
-                for (Plant plant : scene.getPlants()) {
-                    sceneAndPlants.put(scene, plant);
-                    // Collecter toutes les racines
-                    rootList.addAll(plant.getFlatRoots());
+                List<Map<String, Object>> plantsData = (List<Map<String, Object>>) sceneData.get("plants");
+                if (plantsData == null || plantsData.isEmpty()) {
+                    System.err.println("Aucune plante trouvée dans la scène.");
+                    continue; // Passer à la scène suivante
+                }
+
+                for (Map<String, Object> plantData : plantsData) {
+                    Plant plant = buildPlant(plantData, scene, isTimeData);
+                    scene.addPlant(plant);
+
+                    flatRootList.addAll(plant.getFlatRoots());
                 }
             }
+
+            RootModel.RootModelEntry entry = new RootModel.RootModelEntry(scene, metadata, flatRootList);
+
+            dataByDate.put(dateOfCapture, entry);
         }
 
-        return rootModel;
+        return new RootModel(dataByDate);
     }
 
     /**
@@ -127,7 +125,11 @@ public class RootModelLoader {
             Metadata.PropertyDefinition propDef = new Metadata.PropertyDefinition(label, type, unit);
             propertyDefinitions.add(propDef);
         }
-        metadata.propertiedef = propertyDefinitions;
+        metadata.propertyDefinitions = propertyDefinitions;
+
+        // Ajouter la date de capture
+        LocalDateTime dateToUse = (LocalDateTime) metadataData.getOrDefault("dateToUse", LocalDateTime.now());
+        metadata.addDateOfCapture(dateToUse);
 
         // Récupérer 'observationHours' s'il existe
         List<Double> observationHours = (List<Double>) metadataData.get("observationHours");
@@ -141,9 +143,8 @@ public class RootModelLoader {
     /**
      * Construit un objet Scene à partir des données fournies.
      *
-     * @param sceneData                      Map contenant les données de la scène.
-     * @param isTimeData                     Indique si les données contiennent des informations temporelles.
-     * @param hoursCorrespondingToTimePoints Ensemble des heures correspondantes aux points temporels.
+     * @param sceneData  Map contenant les données de la scène.
+     * @param isTimeData Indique si les données contiennent des informations temporelles.
      * @return Un objet Scene.
      */
     private static Scene buildScene(Map<String, Object> sceneData, boolean isTimeData) {
@@ -161,9 +162,9 @@ public class RootModelLoader {
     /**
      * Construit un objet Plant à partir des données fournies.
      *
-     * @param plantData                      Map contenant les données de la plante.
-     * @param parentScene                    La scène parente.
-     * @param isTimeData                     Indique si les données contiennent des informations temporelles.
+     * @param plantData   Map contenant les données de la plante.
+     * @param parentScene La scène parente.
+     * @param isTimeData  Indique si les données contiennent des informations temporelles.
      * @return Un objet Plant.
      */
     private static Plant buildPlant(Map<String, Object> plantData, Scene parentScene, boolean isTimeData) {
@@ -182,10 +183,10 @@ public class RootModelLoader {
     /**
      * Construit un objet Root à partir des données fournies.
      *
-     * @param rootData                       Map contenant les données de la racine.
-     * @param parentRoot                     La racine parente.
-     * @param parentPlant                    La plante parente.
-     * @param isTimeData                     Indique si les données contiennent des informations temporelles.
+     * @param rootData    Map contenant les données de la racine.
+     * @param parentRoot  La racine parente.
+     * @param parentPlant La plante parente.
+     * @param isTimeData  Indique si les données contiennent des informations temporelles.
      * @return Un objet Root.
      */
     private static Root buildRoot(Map<String, Object> rootData, Root parentRoot, Plant parentPlant, boolean isTimeData) {
@@ -235,7 +236,12 @@ public class RootModelLoader {
                         points.add(pointData);
                     }
                 }
-                geometry = new Polyline2D(points);
+                // Récupérer la date de capture à partir des métadonnées
+                LocalDateTime dateOfCapture = (LocalDateTime) rootData.get("date");
+                if (dateOfCapture == null) {
+                    dateOfCapture = LocalDateTime.now();
+                }
+                geometry = new Polyline2D(points, dateOfCapture);
             }
         }
 

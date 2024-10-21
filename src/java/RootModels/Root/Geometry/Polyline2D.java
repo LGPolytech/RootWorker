@@ -4,43 +4,37 @@ import io.github.rocsg.fijiyama.registration.ItkTransform;
 
 import java.awt.geom.Point2D;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- * Represents a 2D polyline, defined as a list of points in a 2D plane.
- * This class provides methods to perform geometric operations on the polyline.
+ * Représente une polyligne 2D, définie comme une liste de points dans un plan 2D.
+ * Cette classe fournit des méthodes pour effectuer des opérations géométriques sur la polyligne.
  */
 public class Polyline2D implements Geometry {
-    // List of points representing the polyline
+    // Liste des points représentant la polyligne
     public final List<Point2D> polyline;
     public final LocalDateTime dateOfCapture;
 
-    public Polyline2D() {
-        this.polyline = new ArrayList<>();
-        dateOfCapture = LocalDateTime.now();
-    }
-
     /**
-     * Constructor for Polyline2D.
+     * Constructeur pour Polyline2D.
      *
-     * @param polyline A list of Point2D objects that define the polyline.
+     * @param polyline      Une liste d'objets Point2D qui définissent la polyligne.
+     * @param dateOfCapture Date de capture associée à la polyligne.
      */
-    public Polyline2D(List<Point2D> polyline) {
+    public Polyline2D(List<Point2D> polyline, LocalDateTime dateOfCapture) {
         this.polyline = polyline;
-        dateOfCapture = LocalDateTime.now();
+        this.dateOfCapture = dateOfCapture;
     }
 
     /**
-     * Scales the polyline by a given factor (between 0 and 1).
+     * Met à l'échelle la polyligne par un facteur donné (entre 0 et 1).
      *
-     * @param scaleFactor The factor by which to scale the polyline. Values greater than 1 will enlarge the polyline, while values between 0 and 1 will shrink it.
+     * @param scaleFactor Le facteur par lequel mettre à l'échelle la polyligne.
      */
     @Override
     public void scale(double scaleFactor) {
-        // For each point in the polyline, scale its coordinates relative to the origin (0,0)
         polyline.forEach(point -> {
             double newX = point.getX() * scaleFactor;
             double newY = point.getY() * scaleFactor;
@@ -49,10 +43,10 @@ public class Polyline2D implements Geometry {
     }
 
     /**
-     * Calculates the length of the polyline until a given time
+     * Calcule la longueur totale de la polyligne jusqu'à un temps donné.
      *
-     * @param time No use for 2D polyline.
-     * @return For a 2D polyline it returns the total length of the polyline.
+     * @param time Non utilisé pour une polyligne 2D.
+     * @return La longueur totale de la polyligne.
      */
     @Override
     public double getLengthUntil(double time) {
@@ -60,9 +54,9 @@ public class Polyline2D implements Geometry {
     }
 
     /**
-     * Calculates the total length of the polyline.
+     * Calcule la longueur totale de la polyligne.
      *
-     * @return The total length of the polyline, i.e., the sum of all the Euclidean distances between consecutive points in the list.
+     * @return La longueur totale de la polyligne.
      */
     @Override
     public double getTotalLength() {
@@ -76,9 +70,9 @@ public class Polyline2D implements Geometry {
     }
 
     /**
-     * Applies a given transformation to the polyline.
+     * Applique une transformation donnée à la polyligne.
      *
-     * @param transform An ItkTransform object that represents the transformation to be applied to each point in the polyline.
+     * @param transform Un objet ItkTransform représentant la transformation à appliquer.
      */
     @Override
     public void transform(ItkTransform transform) {
@@ -89,10 +83,11 @@ public class Polyline2D implements Geometry {
     }
 
     /**
-     * Applies a transformation to the polyline before a specified time. For 2D polyline, it calls the transform method.
+     * Applique une transformation à la polyligne avant un temps spécifié.
+     * Pour une polyligne 2D, elle appelle simplement la méthode transform.
      *
-     * @param transform An ItkTransform object representing the transformation to apply.
-     * @param time      Not used here.
+     * @param transform Un objet ItkTransform représentant la transformation à appliquer.
+     * @param time      Non utilisé ici.
      */
     @Override
     public void transformBeforeTime(ItkTransform transform, double time) {
@@ -100,26 +95,22 @@ public class Polyline2D implements Geometry {
     }
 
     /**
-     * Adds a point, another polyline, a list of points, or a string representation of a point to the polyline.
+     * Ajoute un point, une autre polyligne, une liste de points ou une représentation de chaîne d'un point à la polyligne.
      *
-     * @param o The object to add, which can be a Point2D, another Polyline2D, a list of Point2D, or a string representation of a point (e.g., "x,y").
+     * @param o L'objet à ajouter.
      */
     @Override
     public void add(Object o) {
         if (o instanceof Point2D) {
-            // Add a single Point2D to the polyline
             polyline.add((Point2D) o);
         } else if (o instanceof Polyline2D) {
-            // Add all points from another Polyline2D to this polyline
             polyline.addAll(((Polyline2D) o).getPolyline());
         } else if (o instanceof List) {
-            // Add a list of Point2D objects to the polyline
             List<?> list = (List<?>) o;
             for (Object item : list) {
                 if (item instanceof Point2D) {
                     polyline.add((Point2D) item);
                 } else if (item instanceof String) {
-                    // Check if the string contains two numbers inside brackets or parentheses
                     String str = (String) item;
                     Pattern pattern = Pattern.compile("[\\[(](-?\\d+(\\.\\d+)?),\\s*(-?\\d+(\\.\\d+)?)[])]");
                     Matcher matcher = pattern.matcher(str);
@@ -128,14 +119,13 @@ public class Polyline2D implements Geometry {
                         double y = Double.parseDouble(matcher.group(3));
                         polyline.add(new Point2D.Double(x, y));
                     } else {
-                        throw new IllegalArgumentException("String must contain two numeric values enclosed in brackets or parentheses");
+                        throw new IllegalArgumentException("La chaîne doit contenir deux valeurs numériques entre parenthèses ou crochets");
                     }
                 } else {
-                    throw new IllegalArgumentException("List contains non-Point2D elements");
+                    throw new IllegalArgumentException("La liste contient des éléments non Point2D");
                 }
             }
         } else if (o instanceof String) {
-            // Parse a string representation of a point and add it to the polyline
             String[] coordinates = ((String) o).split(",");
             if (coordinates.length == 2) {
                 try {
@@ -143,40 +133,37 @@ public class Polyline2D implements Geometry {
                     double y = Double.parseDouble(coordinates[1].trim());
                     polyline.add(new Point2D.Double(x, y));
                 } catch (NumberFormatException e) {
-                    throw new IllegalArgumentException("Invalid string format for Point2D: " + o);
+                    throw new IllegalArgumentException("Format de chaîne invalide pour Point2D: " + o);
                 }
             } else {
-                throw new IllegalArgumentException("String must be in the format 'x,y'");
+                throw new IllegalArgumentException("La chaîne doit être au format 'x,y'");
             }
         } else {
-            throw new IllegalArgumentException("Unsupported type: " + o.getClass().getName());
+            throw new IllegalArgumentException("Type non pris en charge: " + o.getClass().getName());
         }
     }
 
     /**
-     * Gets the list of points that form the polyline.
+     * Obtient la liste des points qui forment la polyligne.
      *
-     * @return A list of Point2D objects representing the polyline.
+     * @return Une liste d'objets Point2D représentant la polyligne.
      */
     public List<Point2D> getPolyline() {
         return polyline;
     }
 
     /**
-     * Checks if this polyline is equal to another object.
+     * Vérifie si cette polyligne est égale à un autre objet.
      *
-     * @param o The object to compare with.
-     * @return True if the object is a Polyline2D with the same points and associated times, false otherwise.
+     * @param o L'objet à comparer.
+     * @return True si l'objet est une Polyline2D avec les mêmes points, false sinon.
      */
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
+
         Polyline2D that = (Polyline2D) o;
-        if (this.polyline.size() != that.polyline.size()) return false;
-        for (int i = 0; i < this.polyline.size(); i++) {
-            if (this.polyline.get(i).equals(that.polyline.get(i))) return false;
-        }
-        return true;
+        return this.polyline.equals(that.polyline);
     }
 }
